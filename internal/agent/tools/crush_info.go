@@ -353,7 +353,8 @@ func writePermissions(b *strings.Builder, cfg *config.ConfigStore) {
 
 	hasAllowedTools := c.Permissions != nil && len(c.Permissions.AllowedTools) > 0
 	isNonNormalMode := overrides.PermissionMode == permission.PermissionModeYolo ||
-		overrides.PermissionMode == permission.PermissionModeSuperYolo
+		overrides.PermissionMode == permission.PermissionModeSuperYolo ||
+		overrides.PermissionMode == permission.PermissionModeAutoClassify
 
 	if !isNonNormalMode && !hasAllowedTools {
 		return
@@ -363,6 +364,8 @@ func writePermissions(b *strings.Builder, cfg *config.ConfigStore) {
 	switch overrides.PermissionMode {
 	case permission.PermissionModeSuperYolo:
 		b.WriteString("mode = super_yolo\n")
+	case permission.PermissionModeAutoClassify:
+		b.WriteString("mode = auto_classify\n")
 	case permission.PermissionModeYolo:
 		b.WriteString("mode = yolo\n")
 	default:

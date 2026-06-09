@@ -23,6 +23,9 @@ const (
 	// WorkspacePermissionModeSuperYolo auto-approves everything, including
 	// dangerous commands.
 	WorkspacePermissionModeSuperYolo WorkspacePermissionMode = "super_yolo"
+	// WorkspacePermissionModeAutoClassify auto-approves non-dangerous commands
+	// and routes dangerous commands to an LLM for review.
+	WorkspacePermissionModeAutoClassify WorkspacePermissionMode = "auto_classify"
 )
 
 // Workspace represents a running app.App workspace with its associated

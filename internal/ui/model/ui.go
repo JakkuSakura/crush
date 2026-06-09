@@ -996,6 +996,9 @@ func (m *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.com.Workspace.PermissionMode() == permission.PermissionModeSuperYolo {
 			m.textarea.Placeholder = "Super yolo mode!"
 		}
+		if m.com.Workspace.PermissionMode() == permission.PermissionModeAutoClassify {
+			m.textarea.Placeholder = "Auto-classify mode!"
+		}
 	}
 
 	// at this point this can only handle [message.Attachment] message, and we
@@ -1883,12 +1886,20 @@ func (m *UI) handleKeyPressMsg(msg tea.KeyPressMsg) tea.Cmd {
 			cmds = append(cmds, tea.Suspend)
 			return true
 		case key.Matches(msg, m.keyMap.ToggleYolo):
-			if m.com.Workspace.PermissionMode() == permission.PermissionModeYolo {
-				m.com.Workspace.PermissionSetMode(permission.PermissionModeNormal)
-				cmds = append(cmds, util.ReportInfo("Yolo mode disabled"))
-			} else {
+			mode := m.com.Workspace.PermissionMode()
+			switch mode {
+			case permission.PermissionModeNormal:
 				m.com.Workspace.PermissionSetMode(permission.PermissionModeYolo)
 				cmds = append(cmds, util.ReportInfo("Yolo mode enabled"))
+			case permission.PermissionModeYolo:
+				m.com.Workspace.PermissionSetMode(permission.PermissionModeAutoClassify)
+				cmds = append(cmds, util.ReportInfo("Auto-classify mode enabled"))
+			case permission.PermissionModeAutoClassify:
+				m.com.Workspace.PermissionSetMode(permission.PermissionModeSuperYolo)
+				cmds = append(cmds, util.ReportInfo("Super yolo mode enabled"))
+			case permission.PermissionModeSuperYolo:
+				m.com.Workspace.PermissionSetMode(permission.PermissionModeNormal)
+				cmds = append(cmds, util.ReportInfo("Normal mode restored"))
 			}
 			m.setEditorPrompt(m.com.Workspace.PermissionMode())
 			return true
@@ -2967,6 +2978,8 @@ func (m *UI) setEditorPrompt(mode permission.PermissionMode) {
 	switch mode {
 	case permission.PermissionModeSuperYolo:
 		m.textarea.SetPromptFunc(4, m.superYoloPromptFunc)
+	case permission.PermissionModeAutoClassify:
+		m.textarea.SetPromptFunc(4, m.yoloPromptFunc) // same prompt style as yolo
 	case permission.PermissionModeYolo:
 		m.textarea.SetPromptFunc(4, m.yoloPromptFunc)
 	default:

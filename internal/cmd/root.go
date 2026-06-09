@@ -57,7 +57,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Debug")
 	rootCmd.PersistentFlags().StringVarP(&clientHost, "host", "H", server.DefaultHost(), "Connect to a specific crush server host (for advanced users)")
 	rootCmd.Flags().BoolP("help", "h", false, "Help")
-	rootCmd.PersistentFlags().CountP("yolo", "y", "Skip permission prompts: -y for non-dangerous commands, -yy to skip all including dangerous ones")
+	rootCmd.PersistentFlags().CountP("yolo", "y", "Skip permission prompts: -y for non-dangerous commands, -yy to skip all including dangerous ones, -yyy to auto-classify dangerous commands via LLM")
 	rootCmd.Flags().StringP("session", "s", "", "Continue a previous session by ID")
 	rootCmd.Flags().BoolP("continue", "C", false, "Continue the most recent session")
 	rootCmd.MarkFlagsMutuallyExclusive("session", "continue")
@@ -267,9 +267,12 @@ func setupLocalWorkspace(cmd *cobra.Command) (workspace.Workspace, func(), error
 	}
 
 	cfg := store.Config()
-	if yoloCount > 1 {
+	if yoloCount >= 3 {
 		store.Overrides().PermissionMode = permission.PermissionModeSuperYolo
 		fmt.Fprintln(os.Stderr, "Warning: super yolo mode is active. All commands, including potentially dangerous ones, will be auto-approved without prompting.")
+	} else if yoloCount == 2 {
+		store.Overrides().PermissionMode = permission.PermissionModeAutoClassify
+		fmt.Fprintln(os.Stderr, "Info: auto-classify mode is active. Dangerous commands will be reviewed by the LLM.")
 	} else if yoloCount == 1 {
 		store.Overrides().PermissionMode = permission.PermissionModeYolo
 	}
@@ -394,9 +397,12 @@ func connectToServer(cmd *cobra.Command) (*client.Client, *proto.Workspace, func
 	}
 
 	wsPermMode := proto.WorkspacePermissionModeNormal
-	if yoloCount > 1 {
+	if yoloCount >= 3 {
 		wsPermMode = proto.WorkspacePermissionModeSuperYolo
 		fmt.Fprintln(os.Stderr, "Warning: super yolo mode is active. All commands, including potentially dangerous ones, will be auto-approved without prompting.")
+	} else if yoloCount == 2 {
+		wsPermMode = proto.WorkspacePermissionModeAutoClassify
+		fmt.Fprintln(os.Stderr, "Info: auto-classify mode is active. Dangerous commands will be reviewed by the LLM.")
 	} else if yoloCount == 1 {
 		wsPermMode = proto.WorkspacePermissionModeYolo
 	}

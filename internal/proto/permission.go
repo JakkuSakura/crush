@@ -12,6 +12,8 @@ func PermissionModeToProto(mode permission.PermissionMode) WorkspacePermissionMo
 	switch mode {
 	case permission.PermissionModeSuperYolo:
 		return WorkspacePermissionModeSuperYolo
+	case permission.PermissionModeAutoClassify:
+		return WorkspacePermissionModeAutoClassify
 	case permission.PermissionModeYolo:
 		return WorkspacePermissionModeYolo
 	default:
@@ -25,6 +27,8 @@ func ProtoModeToPermission(mode WorkspacePermissionMode) permission.PermissionMo
 	switch mode {
 	case WorkspacePermissionModeSuperYolo:
 		return permission.PermissionModeSuperYolo
+	case WorkspacePermissionModeAutoClassify:
+		return permission.PermissionModeAutoClassify
 	case WorkspacePermissionModeYolo:
 		return permission.PermissionModeYolo
 	default:

@@ -46,6 +46,10 @@ const (
 	// PermissionModeSuperYolo auto-approves everything including dangerous
 	// commands.
 	PermissionModeSuperYolo
+	// PermissionModeAutoClassify auto-approves non-dangerous commands and
+	// routes dangerous commands to an LLM for review instead of prompting
+	// the user.
+	PermissionModeAutoClassify
 )
 
 type CreatePermissionRequest struct {
@@ -209,6 +213,12 @@ func (s *permissionService) Request(ctx context.Context, opts CreatePermissionRe
 	// Super yolo mode: auto-approve everything including dangerous commands.
 	if mode == PermissionModeSuperYolo {
 		return true, nil
+	}
+	// In auto-classify mode, auto-approve non-dangerous commands. Dangerous
+	// commands are handled by the caller (bash tool) which routes them to
+	// an LLM for review.
+	if mode == PermissionModeAutoClassify {
+		return !opts.Dangerous, nil
 	}
 	// In yolo mode, auto-approve non-dangerous commands but still prompt for
 	// dangerous ones.

@@ -190,7 +190,11 @@ func blockFuncs() []shell.BlockFunc {
 	}
 }
 
-func NewBashTool(permissions permission.Service, workingDir string, attribution *config.Attribution, modelID string) fantasy.AgentTool {
+// CommandClassifier reviews a command and decides if it's safe to execute.
+// Returns approved, a potentially modified command, and a reason for the decision.
+type CommandClassifier func(ctx context.Context, command, description string) (approved bool, modifiedCommand string, reason string)
+
+func NewBashTool(permissions permission.Service, workingDir string, attribution *config.Attribution, modelID string, classifier CommandClassifier) fantasy.AgentTool {
 	return fantasy.NewAgentTool(
 		BashToolName,
 		string(bashDescription(attribution, modelID)),
@@ -227,6 +231,21 @@ func NewBashTool(permissions permission.Service, workingDir string, attribution 
 				// explicit approval.
 				blocks := blockFuncs()
 				isDangerous := shell.IsCommandBlocked(params.Command, blocks)
+
+				// In auto-classify mode, route dangerous commands to the LLM
+				// for review instead of prompting the user.
+				if isDangerous && permissions.PermissionMode() == permission.PermissionModeAutoClassify && classifier != nil {
+					approved, modifiedCmd, reason := classifier(ctx, params.Command, params.Description)
+					if !approved {
+						return fantasy.NewTextErrorResponse(fmt.Sprintf("Command blocked by auto-classifier: %s", reason)), nil
+					}
+					// Execute the (possibly modified) command without block functions
+					// since the LLM already reviewed it.
+					if modifiedCmd != "" {
+						params.Command = modifiedCmd
+					}
+					return executeBashCommand(ctx, params, execWorkingDir, nil)
+				}
 
 				approved, err := permissions.Request(ctx,
 					permission.CreatePermissionRequest{
